@@ -5,7 +5,7 @@ from config.settings import CORS_ORIGINS, LLM_PROVIDER, NVIDIA_MODEL, OLLAMA_CHA
 from src.schemas import ChatRequest, ChatResponse
 from src.services.chat_service import ask_portfolio
 
-app = FastAPI(title="Portfolio Chatbot")
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
