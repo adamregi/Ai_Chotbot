@@ -1,28 +1,35 @@
+import os
 import requests
-from requests import RequestException
 
-from config.settings import EMBEDDING_MODEL, OLLAMA_BASE_URL, REQUEST_TIMEOUT_SECONDS
+API_KEY = os.getenv("NVIDIA_API_KEY")
+BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").rstrip("/")
+MODEL = os.getenv("NVIDIA_EMBEDDING_MODEL", "nvidia/nv-embedqa-e5-v5")
 
-OLLAMA_URL = f"{OLLAMA_BASE_URL}/api/embed"
 
+def create_embedding(text: str):
+    payload = {
+        "input": text,
+        "model": MODEL,
+        "input_type": "query"
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+    }
+    
+    print(f"[Embedding Request] POST {BASE_URL}/embeddings | Model: '{MODEL}'")
+    
+    response = requests.post(
+        f"{BASE_URL}/embeddings",
+        headers=headers,
+        json=payload,
+        timeout=60,
+    )
 
-def create_embedding(text: str) -> list[float]:
-    if not text or not text.strip():
-        raise ValueError("Text to embed cannot be empty.")
-    try:
-        response = requests.post(
-            OLLAMA_URL,
-            json={"model": EMBEDDING_MODEL, "input": text},
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-    except RequestException as exc:
-        raise RuntimeError(
-            "Could not reach Ollama for embeddings. Start Ollama and ensure "
-            f"the '{EMBEDDING_MODEL}' model is installed."
-        ) from exc
+    print("Status:", response.status_code)
+    print("Response:", response.text)
 
-    embeddings = response.json().get("embeddings")
-    if not embeddings:
-        raise RuntimeError("Ollama returned no embedding.")
-    return embeddings[0]
+    response.raise_for_status()
+
+    return response.json()["data"][0]["embedding"]
