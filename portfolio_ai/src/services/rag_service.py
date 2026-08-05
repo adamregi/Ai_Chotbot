@@ -14,7 +14,16 @@ def retrieve_context(question: str) -> str:
         print("[WARNING] Chroma collection 'portfolio' has 0 documents! Run 'python scripts/rebuild_db.py' locally.")
         return ""
     results = repository.search(question)
-    return "\n\n".join(str(result["text"]) for result in results)
+    formatted_chunks = []
+    for res in results:
+        source = res.get("metadata", {}).get("source")
+        text = res.get("text", "")
+        if source:
+            formatted_chunks.append(f"--- Document: {source} ---\n{text}")
+        else:
+            formatted_chunks.append(text)
+
+    return "\n\n".join(formatted_chunks)
 
 
 def answer_question(question: str) -> str:

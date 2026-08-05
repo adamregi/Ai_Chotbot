@@ -8,5 +8,5 @@ from src.ingestion.ingest import ingest
 
 
 if __name__ == "__main__":
-    print(f"Portfolio ingested successfully ({ingest()} chunks).")
-
+    files, chunks = ingest()
+    print(f"\n[OK] Portfolio rebuild complete: {files} files processed, {chunks} chunks stored.")
