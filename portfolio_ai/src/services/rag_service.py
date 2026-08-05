@@ -8,6 +8,11 @@ llm = get_llm()
 
 
 def retrieve_context(question: str) -> str:
+    doc_count = repository.collection.count()
+    print(f"[RAG] Chroma documents in index: {doc_count}")
+    if doc_count == 0:
+        print("[WARNING] Chroma collection 'portfolio' has 0 documents! Run 'python scripts/rebuild_db.py' locally.")
+        return ""
     results = repository.search(question)
     return "\n\n".join(str(result["text"]) for result in results)
 
@@ -17,3 +22,4 @@ def answer_question(question: str) -> str:
     if not context:
         return "I couldn't find any relevant information."
     return llm.generate(SYSTEM_PROMPT, build_rag_prompt(context, question))
+

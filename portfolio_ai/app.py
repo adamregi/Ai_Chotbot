@@ -41,15 +41,19 @@ def health() -> dict[str, str]:
 
 @app.get("/info")
 def info() -> dict[str, str]:
+    from src.services.rag_service import repository
+    doc_count = str(repository.collection.count())
     model = NVIDIA_MODEL if LLM_PROVIDER == "nvidia" else OLLAMA_CHAT_MODEL
     return {
-        "assistant": "Vignesh AI",
+        "assistant": "Adam AI",
         "version": "1.0",
         "provider": LLM_PROVIDER,
         "model": model,
         "embedding": EMBEDDING_MODEL,
         "vectorStore": "ChromaDB",
+        "documentCount": doc_count,
     }
+
 
 
 

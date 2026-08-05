@@ -33,3 +33,4 @@ def create_embedding(text: str):
     response.raise_for_status()
 
     return response.json()["data"][0]["embedding"]
+
