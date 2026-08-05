@@ -1,0 +1,52 @@
+# Python & Bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.venv/
+ENV/
+env/
+
+# Secrets & Environment variables
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
+secrets.*
+
+# Test files & Test directories (Excluded)
+tests/
+test_*.py
+*_test.py
+evaluation/
+.pytest_cache/
+.coverage
+
+# IDEs & System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Databases & Cache
+chroma_db/
+data/chroma_db/
+faiss_index/
+.cache/
+
+# Logs, Archives & Artifacts
+*.log
+*.db
+*.sqlite3
+*.zip
+uploads/
+dist/
+build/

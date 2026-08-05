@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+.env
+
+data/processed/*
+!data/processed/.gitkeep
+data/chroma_db/

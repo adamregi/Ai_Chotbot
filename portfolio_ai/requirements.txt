@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+requests
+pypdf
+chromadb
+python-dotenv
+numpy
+pytest
