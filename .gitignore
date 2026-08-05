@@ -36,16 +36,12 @@ evaluation/
 .DS_Store
 Thumbs.db
 
-# Databases & Cache
-chroma_db/
-data/chroma_db/
+# Cache & Local indexes (excluding chroma_db so database is tracked)
 faiss_index/
 .cache/
 
 # Logs, Archives & Artifacts
 *.log
-*.db
-*.sqlite3
 *.zip
 uploads/
 dist/
