@@ -14,7 +14,7 @@ EXCLUDED_FILES = {"system_context.md"}
 
 
 def ingest(raw_dir: Path = RAW_DATA_DIR) -> tuple[int, int]:
-    """Reads all raw Markdown files, chunks them, embeds them, and stores them in ChromaDB with metadata."""
+    """Reads all raw Markdown and PDF files, chunks them, embeds them, and stores them in ChromaDB with metadata."""
     store = ChromaRepository()
     try:
         store.client.delete_collection("portfolio")
@@ -22,7 +22,10 @@ def ingest(raw_dir: Path = RAW_DATA_DIR) -> tuple[int, int]:
         pass
     store = ChromaRepository()
 
-    markdown_files = sorted(raw_dir.glob("*.md"))
+    # Collect both .md and .pdf files
+    data_files = sorted(
+        [f for f in raw_dir.iterdir() if f.is_file() and f.suffix.lower() in {".md", ".pdf"}]
+    )
     
     all_texts = []
     all_metadatas = []
@@ -32,12 +35,23 @@ def ingest(raw_dir: Path = RAW_DATA_DIR) -> tuple[int, int]:
 
     print(f"Starting ingestion from: {raw_dir}\n")
 
-    for file in markdown_files:
+    for file in data_files:
         if file.name.lower() in EXCLUDED_FILES:
             print(f"Skipping {file.name} (excluded from vector store)")
             continue
 
-        text = file.read_text(encoding="utf-8").strip()
+        text = ""
+        if file.suffix.lower() == ".md":
+            text = file.read_text(encoding="utf-8").strip()
+        elif file.suffix.lower() == ".pdf":
+            try:
+                from src.ingestion.readers.pdf_reader import extract_pages
+                pages = extract_pages(str(file))
+                text = "\n\n".join([f"Page {p['page']}:\n{p['text']}" for p in pages]).strip()
+            except Exception as e:
+                print(f"Error reading PDF {file.name}: {e}")
+                continue
+
         if not text:
             print(f"Skipping {file.name} (file is empty)")
             continue
@@ -68,6 +82,7 @@ def ingest(raw_dir: Path = RAW_DATA_DIR) -> tuple[int, int]:
     print(f"{len(all_texts)} chunks stored in ChromaDB.")
 
     return files_processed, len(all_texts)
+
 
 
 if __name__ == "__main__":

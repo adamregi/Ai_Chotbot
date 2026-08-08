@@ -10,7 +10,7 @@ import uuid
 import chromadb
 
 from config.settings import CHROMA_DB_DIR
-from src.embeddings.embedding_service import create_embedding
+from src.embeddings.embedding_service import create_embedding, create_embeddings
 
 
 class ChromaRepository:
@@ -30,7 +30,7 @@ class ChromaRepository:
             return
         
         doc_ids = ids if ids is not None else [str(uuid.uuid4()) for _ in texts]
-        embeddings = [create_embedding(text) for text in texts]
+        embeddings = create_embeddings(texts, input_type="passage")
 
         kwargs = {
             "documents": texts,
@@ -49,7 +49,7 @@ class ChromaRepository:
         if document_count == 0:
             return []
         results = self.collection.query(
-            query_embeddings=[create_embedding(question)],
+            query_embeddings=[create_embedding(question, input_type="query")],
             n_results=min(top_k, document_count),
             include=["documents", "metadatas", "distances"],
         )

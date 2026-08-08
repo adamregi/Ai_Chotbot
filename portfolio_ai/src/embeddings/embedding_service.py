@@ -6,20 +6,22 @@ BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").r
 MODEL = os.getenv("NVIDIA_EMBEDDING_MODEL", "nvidia/nv-embedqa-e5-v5")
 
 
-def create_embedding(text: str):
+def create_embeddings(texts: list[str], input_type: str = "passage") -> list[list[float]]:
+    if not texts:
+        return []
+
+    # Handle single string or list of strings
     payload = {
-        "input": text,
+        "input": texts,
         "model": MODEL,
-        "input_type": "query"
+        "input_type": input_type,
     }
-    
+
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
     }
-    
-    print(f"[Embedding Request] POST {BASE_URL}/embeddings | Model: '{MODEL}'")
-    
+
     response = requests.post(
         f"{BASE_URL}/embeddings",
         headers=headers,
@@ -27,10 +29,16 @@ def create_embedding(text: str):
         timeout=60,
     )
 
-    print("Status:", response.status_code)
-    print("Response:", response.text)
-
     response.raise_for_status()
+    res_data = response.json()["data"]
+    
+    # Sort embeddings by original input index
+    sorted_items = sorted(res_data, key=lambda x: x.get("index", 0))
+    return [item["embedding"] for item in sorted_items]
 
-    return response.json()["data"][0]["embedding"]
+
+def create_embedding(text: str, input_type: str = "query") -> list[float]:
+    embeddings = create_embeddings([text], input_type=input_type)
+    return embeddings[0] if embeddings else []
+
 
