@@ -5,13 +5,14 @@ from config.settings import CORS_ORIGINS, LLM_PROVIDER, NVIDIA_MODEL, OLLAMA_CHA
 from src.schemas import ChatRequest, ChatResponse
 from src.services.chat_service import ask_portfolio
 
-app = FastAPI()
+app = FastAPI(title="Adam AI Chatbot")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
