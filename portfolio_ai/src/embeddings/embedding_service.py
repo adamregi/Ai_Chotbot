@@ -1,44 +1,41 @@
 import os
-import requests
+from typing import List, Union
+from fastembed import TextEmbedding
 
-API_KEY = os.getenv("NVIDIA_API_KEY")
-BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").rstrip("/")
-MODEL = os.getenv("NVIDIA_EMBEDDING_MODEL", "nvidia/nv-embedqa-e5-v5")
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+_model_instance = None
 
 
-def create_embeddings(texts: list[str], input_type: str = "passage") -> list[list[float]]:
+def get_embedding_model() -> TextEmbedding:
+    """Lazy-load the FastEmbed TextEmbedding model."""
+    global _model_instance
+    if _model_instance is None:
+        _model_instance = TextEmbedding(model_name=EMBEDDING_MODEL_NAME)
+    return _model_instance
+
+
+def create_embeddings(texts: Union[str, List[str]], input_type: str = "passage") -> List[List[float]]:
+    """
+    Generate vector embeddings using FastEmbed (local, ONNX-accelerated).
+    
+    Args:
+        texts: A single text string or list of text strings.
+        input_type: Retained for signature compatibility ('passage' or 'query').
+    """
+    if isinstance(texts, str):
+        texts = [texts]
     if not texts:
         return []
 
-    # Handle single string or list of strings
-    payload = {
-        "input": texts,
-        "model": MODEL,
-        "input_type": input_type,
-    }
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-    response = requests.post(
-        f"{BASE_URL}/embeddings",
-        headers=headers,
-        json=payload,
-        timeout=60,
-    )
-
-    response.raise_for_status()
-    res_data = response.json()["data"]
-    
-    # Sort embeddings by original input index
-    sorted_items = sorted(res_data, key=lambda x: x.get("index", 0))
-    return [item["embedding"] for item in sorted_items]
+    model = get_embedding_model()
+    embeddings_iter = model.embed(texts)
+    return [e.tolist() for e in embeddings_iter]
 
 
-def create_embedding(text: str, input_type: str = "query") -> list[float]:
+def create_embedding(text: str, input_type: str = "query") -> List[float]:
+    """Generate embedding for a single text."""
     embeddings = create_embeddings([text], input_type=input_type)
     return embeddings[0] if embeddings else []
+
 
 

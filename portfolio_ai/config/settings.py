@@ -12,9 +12,8 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 CHROMA_DB_DIR = DATA_DIR / "chroma_db"
 RESUME_PATH = RAW_DATA_DIR / "resume.pdf"
 
-# Retrieval embeddings stay local so the existing Chroma index remains compatible.
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
-EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+# FastEmbed local embeddings model
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 
 # Answer-generation provider: 'nvidia' or 'ollama'.
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "nvidia").strip().lower()
@@ -22,7 +21,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "nvidia").strip().lower()
 # NVIDIA AI uses an OpenAI-compatible HTTP endpoint.
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").rstrip("/")
-NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
+NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "meta/llama-3.2-11b-vision-instruct")
 NVIDIA_MAX_COMPLETION_TOKENS = int(os.getenv("NVIDIA_MAX_COMPLETION_TOKENS", "1024"))
 NVIDIA_MAX_RETRIES = int(os.getenv("NVIDIA_MAX_RETRIES", "2"))
 NVIDIA_RETRY_DELAY_SECONDS = float(os.getenv("NVIDIA_RETRY_DELAY_SECONDS", "1"))
