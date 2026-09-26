@@ -1,23 +1,23 @@
 import os
 from typing import List, Union
-from fastembed import TextEmbedding
+from langchain_community.embeddings import FastEmbedEmbeddings
 
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 _model_instance = None
 
 
-def get_embedding_model() -> TextEmbedding:
-    """Lazy-load the FastEmbed TextEmbedding model."""
+def get_embedding_model() -> FastEmbedEmbeddings:
+    """Lazy-load the LangChain FastEmbedEmbeddings model."""
     global _model_instance
     if _model_instance is None:
-        _model_instance = TextEmbedding(model_name=EMBEDDING_MODEL_NAME)
+        _model_instance = FastEmbedEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     return _model_instance
 
 
 def create_embeddings(texts: Union[str, List[str]], input_type: str = "passage") -> List[List[float]]:
     """
-    Generate vector embeddings using FastEmbed (local, ONNX-accelerated).
-    
+    Generate vector embeddings using LangChain FastEmbedEmbeddings (local, ONNX-accelerated).
+
     Args:
         texts: A single text string or list of text strings.
         input_type: Retained for signature compatibility ('passage' or 'query').
@@ -28,14 +28,10 @@ def create_embeddings(texts: Union[str, List[str]], input_type: str = "passage")
         return []
 
     model = get_embedding_model()
-    embeddings_iter = model.embed(texts)
-    return [e.tolist() for e in embeddings_iter]
+    return model.embed_documents(texts)
 
 
 def create_embedding(text: str, input_type: str = "query") -> List[float]:
     """Generate embedding for a single text."""
-    embeddings = create_embeddings([text], input_type=input_type)
-    return embeddings[0] if embeddings else []
-
-
-
+    model = get_embedding_model()
+    return model.embed_query(text)

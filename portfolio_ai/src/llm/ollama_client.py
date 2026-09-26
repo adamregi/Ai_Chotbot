@@ -33,3 +33,10 @@ class OllamaClient(BaseLLM):
         if not answer:
             raise RuntimeError("Ollama returned an empty response.")
         return answer
+
+    def to_chat_model(self):
+        from langchain_ollama import ChatOllama
+        return ChatOllama(
+            model=self.model,
+            base_url=OLLAMA_BASE_URL,
+        )

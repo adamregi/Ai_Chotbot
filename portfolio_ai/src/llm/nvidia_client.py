@@ -108,3 +108,16 @@ class NvidiaClient(BaseLLM):
             return answer
 
         raise RuntimeError("NVIDIA request failed after retries.")
+
+    def to_chat_model(self):
+        if not self.api_key:
+            raise RuntimeError(
+                "NVIDIA_API_KEY is not configured. Add it to .env; never place it in source code."
+            )
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+        return ChatNVIDIA(
+            model=self.model,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            max_tokens=self.max_completion_tokens,
+        )

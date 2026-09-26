@@ -7,3 +7,10 @@ python-dotenv
 numpy
 pytest
 fastembed
+langchain
+langchain-core
+langchain-community
+langchain-nvidia-ai-endpoints
+langchain-ollama
+langchain-text-splitters
+langchain-chroma
