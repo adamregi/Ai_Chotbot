@@ -13,12 +13,16 @@ jobs:
     steps:
       - name: Ping Service
         env:
-          SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL || secrets.API_URL || vars.API_URL }}
+          SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL || secrets.API_URL }}
         run: |
-          TARGET_URL="${SERVICE_URL:-https://ai-chotbot.onrender.com}"
-          TARGET_URL="${TARGET_URL%/}"
+          if [ -z "$SERVICE_URL" ]; then
+            echo "::error::Neither RENDER_SERVICE_URL nor API_URL secret is configured. Please add your backend URL in GitHub Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
 
-          echo "Pinging health endpoint: ${TARGET_URL}/health at $(date -u)"
+          TARGET_URL="${SERVICE_URL%/}"
+
+          echo "Pinging backend health endpoint at $(date -u)..."
 
           HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" -m 45 --retry 2 "${TARGET_URL}/health" || echo "FAILED")
 
@@ -30,5 +34,5 @@ jobs:
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
             echo "Service is healthy and awake!"
           else
-            echo "::warning ::Endpoint returned status $HTTP_STATUS. Please ensure RENDER_SERVICE_URL or API_URL is set in GitHub Secrets/Variables if your deployment URL is different."
+            echo "::warning::Health endpoint returned status $HTTP_STATUS"
           fi
