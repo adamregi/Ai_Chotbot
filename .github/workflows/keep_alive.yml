@@ -2,37 +2,65 @@ name: Keep-Alive Ping
 
 on:
   schedule:
-    # Run every 10 minutes to prevent free-tier hosting (Render, Koyeb, etc.) from sleeping
-    - cron: "*/10 * * * *"
+    # Every 10 minutes, avoiding the start of the hour
+    - cron: "7,17,27,37,47,57 * * * *"
+
   workflow_dispatch:
 
 jobs:
   ping:
     name: Ping Health Endpoint
     runs-on: ubuntu-latest
+
     steps:
       - name: Ping Service
         env:
           SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL || secrets.API_URL }}
+
         run: |
           if [ -z "$SERVICE_URL" ]; then
-            echo "::error::Neither RENDER_SERVICE_URL nor API_URL secret is configured. Please add your backend URL in GitHub Repository Settings -> Secrets and variables -> Actions."
+            echo "::error::Neither RENDER_SERVICE_URL nor API_URL is configured."
             exit 1
           fi
 
           TARGET_URL="${SERVICE_URL%/}"
 
-          echo "Pinging backend health endpoint at $(date -u)..."
+          echo "======================================"
+          echo "Keep-Alive Ping"
+          echo "Time UTC: $(date -u)"
+          echo "Target: ${TARGET_URL}/health"
+          echo "======================================"
 
-          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" -m 45 --retry 2 "${TARGET_URL}/health" || echo "FAILED")
+          HTTP_STATUS=$(curl \
+            --silent \
+            --show-error \
+            --output response.txt \
+            --write-out "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 45 \
+            --retry 2 \
+            --retry-delay 3 \
+            "${TARGET_URL}/health")
 
+          CURL_EXIT=$?
+
+          echo "Curl exit code: $CURL_EXIT"
           echo "HTTP Status: $HTTP_STATUS"
+
           if [ -f response.txt ]; then
-            echo "Response: $(cat response.txt)"
+            echo "Response:"
+            cat response.txt
+            echo
+          fi
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::Failed to connect to the service."
+            exit 1
           fi
 
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
             echo "Service is healthy and awake!"
           else
-            echo "::warning::Health endpoint returned status $HTTP_STATUS"
+            echo "::error::Health endpoint returned HTTP $HTTP_STATUS"
+            exit 1
           fi
