@@ -2,9 +2,7 @@ name: Keep-Alive Ping
 
 on:
   schedule:
-    # Every 10 minutes, avoiding the start of the hour
     - cron: "7,17,27,37,47,57 * * * *"
-
   workflow_dispatch:
 
 jobs:
@@ -19,17 +17,14 @@ jobs:
 
         run: |
           if [ -z "$SERVICE_URL" ]; then
-            echo "::error::Neither RENDER_SERVICE_URL nor API_URL is configured."
+            echo "::error::SERVICE_URL secret is missing"
             exit 1
           fi
 
           TARGET_URL="${SERVICE_URL%/}"
 
-          echo "======================================"
-          echo "Keep-Alive Ping"
-          echo "Time UTC: $(date -u)"
-          echo "Target: ${TARGET_URL}/health"
-          echo "======================================"
+          echo "Pinging: ${TARGET_URL}/health"
+          echo "UTC time: $(date -u)"
 
           HTTP_STATUS=$(curl \
             --silent \
@@ -45,21 +40,20 @@ jobs:
           CURL_EXIT=$?
 
           echo "Curl exit code: $CURL_EXIT"
-          echo "HTTP Status: $HTTP_STATUS"
+          echo "HTTP status: $HTTP_STATUS"
 
           if [ -f response.txt ]; then
             echo "Response:"
             cat response.txt
-            echo
           fi
 
           if [ "$CURL_EXIT" -ne 0 ]; then
-            echo "::error::Failed to connect to the service."
+            echo "::error::Request failed"
             exit 1
           fi
 
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-            echo "Service is healthy and awake!"
+            echo "Service is healthy!"
           else
             echo "::error::Health endpoint returned HTTP $HTTP_STATUS"
             exit 1
