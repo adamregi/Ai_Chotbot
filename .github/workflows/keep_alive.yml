@@ -5,56 +5,57 @@ on:
     - cron: "7,17,27,37,47,57 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive-ping
+  cancel-in-progress: false
+
 jobs:
   ping:
     name: Ping Health Endpoint
     runs-on: ubuntu-latest
+    timeout-minutes: 2
 
     steps:
       - name: Ping Service
         env:
           SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL || secrets.API_URL }}
-
         run: |
+          set -u
+
           if [ -z "$SERVICE_URL" ]; then
-            echo "::error::SERVICE_URL secret is missing"
+            echo "::error::Neither RENDER_SERVICE_URL nor API_URL is configured."
             exit 1
           fi
 
-          TARGET_URL="${SERVICE_URL%/}"
+          TARGET_URL="${SERVICE_URL%/}/health"
 
-          echo "Pinging: ${TARGET_URL}/health"
-          echo "UTC time: $(date -u)"
+          echo "Pinging: $TARGET_URL"
+          echo "UTC time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
-          HTTP_STATUS=$(curl \
-            --silent \
-            --show-error \
-            --output response.txt \
-            --write-out "%{http_code}" \
-            --connect-timeout 10 \
-            --max-time 45 \
-            --retry 2 \
-            --retry-delay 3 \
-            "${TARGET_URL}/health")
-
+          HTTP_STATUS="$(curl --silent --show-error --location --output response.txt --write-out "%{http_code}" --connect-timeout 10 --max-time 45 --retry 2 --retry-delay 3 --retry-all-errors "$TARGET_URL")"
           CURL_EXIT=$?
 
-          echo "Curl exit code: $CURL_EXIT"
+          echo "curl exit code: $CURL_EXIT"
           echo "HTTP status: $HTTP_STATUS"
 
           if [ -f response.txt ]; then
             echo "Response:"
             cat response.txt
+            echo
           fi
 
           if [ "$CURL_EXIT" -ne 0 ]; then
-            echo "::error::Request failed"
-            exit 1
+            echo "::error::Health request failed."
+            exit "$CURL_EXIT"
           fi
 
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-            echo "Service is healthy!"
-          else
-            echo "::error::Health endpoint returned HTTP $HTTP_STATUS"
-            exit 1
+            echo "Health check succeeded."
+            exit 0
           fi
+
+          echo "::error::Health endpoint returned HTTP $HTTP_STATUS"
+          exit 1
